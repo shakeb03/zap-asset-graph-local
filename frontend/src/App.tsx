@@ -15,9 +15,11 @@ import '@xyflow/react/dist/style.css';
 import { Search, ShieldAlert } from 'lucide-react';
 import { fetchAssets, fetchBlastRadius, fetchHealthReport } from './api';
 import type { Asset } from './types';
+import type { BlastRadiusResponse, HealthReportResponse } from './types';
 import { layoutNodes } from './lib/layout';
 import { AssetNode, type AssetNodeData } from './components/AssetNode';
-import type { HealthReportResponse } from './types';
+import { AssetSidebar } from './components/AssetSidebar';
+import { HealthPanel } from './components/HealthPanel';
 
 const nodeTypes: NodeTypes = { asset: AssetNode };
 
@@ -78,6 +80,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [blastState, setBlastState] = useState<{ rootId: string; impactedIds: Set<string> } | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [blastRadiusResponse, setBlastRadiusResponse] = useState<BlastRadiusResponse | null>(null);
   const [healthReport, setHealthReport] = useState<HealthReportResponse | null>(null);
 
   const loadAssets = useCallback(async () => {
@@ -114,17 +118,34 @@ export default function App() {
   const onNodeClick = useCallback(
     async (_: React.MouseEvent, node: Node<AssetNodeData>) => {
       const id = node.id;
+      const asset = node.data?.asset;
+      if (asset) setSelectedAsset(asset);
+      setBlastRadiusResponse(null);
       setBlastState(null);
       try {
         const res = await fetchBlastRadius(id);
         const impactedIds = new Set<string>([id, ...res.impactedAssets.map((a) => a.id)]);
         setBlastState({ rootId: id, impactedIds });
+        setBlastRadiusResponse(res);
       } catch {
         setBlastState({ rootId: id, impactedIds: new Set([id]) });
       }
     },
     []
   );
+
+  const closeSidebar = useCallback(() => {
+    setSelectedAsset(null);
+    setBlastRadiusResponse(null);
+    setBlastState(null);
+  }, []);
+
+  const handleAssetUpdated = useCallback((updated: Asset) => {
+    setAssets((prev) =>
+      prev.map((a) => (a.id === updated.id ? { ...a, ...updated } : a))
+    );
+    setSelectedAsset((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
+  }, []);
 
   const runGovernanceScan = useCallback(async () => {
     try {
@@ -183,22 +204,23 @@ export default function App() {
         </button>
       </header>
 
-      <main className="relative flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
-          nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          minZoom={0.2}
-          maxZoom={1.5}
-          defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#2a2a3a' } }}
-          proOptions={{ hideAttribution: true }}
-          className="bg-[#0a0a0f]"
-        >
+      <main className="relative flex flex-1 min-h-0">
+        <div className="relative min-h-0 min-w-0 flex-1">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onNodeClick={onNodeClick}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.2}
+            maxZoom={1.5}
+            defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#2a2a3a' } }}
+            proOptions={{ hideAttribution: true }}
+            className="bg-[#0a0a0f]"
+          >
           <Background color="#2a2a3a" gap={16} size={0.5} />
           <Controls className="!border-[#2a2a3a] !bg-[#12121a] [&>button]:!border-[#2a2a3a] [&>button]:!bg-[#12121a] [&>button]:!text-white [&>button:hover]:!bg-[#2a2a3a]" />
           <MiniMap
@@ -216,56 +238,20 @@ export default function App() {
               {error}
             </Panel>
           )}
-        </ReactFlow>
+          </ReactFlow>
+        </div>
+        {selectedAsset && (
+          <AssetSidebar
+            asset={selectedAsset}
+            blastRadius={blastRadiusResponse}
+            onClose={closeSidebar}
+            onAssetUpdated={handleAssetUpdated}
+          />
+        )}
       </main>
 
       {healthReport && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setHealthReport(null)}
-        >
-          <div
-            className="max-h-[85vh] w-full max-w-lg overflow-auto rounded-xl border border-[#2a2a3a] bg-[#12121a] p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-[#2a2a3a] pb-3">
-              <h2 className="text-lg font-semibold text-white">Governance health</h2>
-              <button
-                onClick={() => setHealthReport(null)}
-                className="rounded p-1 text-zinc-400 hover:bg-[#2a2a3a] hover:text-white"
-              >
-                ×
-              </button>
-            </div>
-            <div className="mt-4 space-y-4 text-sm">
-              <div className="flex items-center gap-3">
-                <span className="text-zinc-400">Score</span>
-                <span
-                  className={`font-semibold ${
-                    healthReport.healthScore >= 70
-                      ? 'text-emerald-400'
-                      : healthReport.healthScore >= 40
-                        ? 'text-amber-400'
-                        : 'text-red-400'
-                  }`}
-                >
-                  {healthReport.healthScore}/100
-                </span>
-              </div>
-              <ul className="space-y-1 text-zinc-400">
-                {healthReport.deductions.map((d, i) => (
-                  <li key={i}>{d}</li>
-                ))}
-              </ul>
-              <div className="grid gap-2 text-zinc-300">
-                <p>Orphaned: {healthReport.orphaned.count}</p>
-                <p>Paused/disabled: {healthReport.errorOrPaused.count}</p>
-                <p>Circular deps: {healthReport.circularDependencies.detected ? 'Yes' : 'No'}</p>
-                <p>Single points of failure: {healthReport.singlePointsOfFailure.count}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <HealthPanel report={healthReport} onClose={() => setHealthReport(null)} />
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import type { AssetsResponse, BlastRadiusResponse, HealthReportResponse } from './types';
+import type { Asset, AssetsResponse, BlastRadiusResponse, HealthReportResponse } from './types';
 
 const API = '/api';
 
@@ -28,5 +28,18 @@ export async function fetchBlastRadius(assetId: string): Promise<BlastRadiusResp
 export async function fetchHealthReport(): Promise<HealthReportResponse> {
   const res = await fetch(`${API}/health/report`);
   if (!res.ok) throw new Error('Failed to fetch health report');
+  return res.json();
+}
+
+export async function transferOwnership(
+  assetId: string,
+  body: { newOwner: string; actor: string }
+): Promise<Asset> {
+  const res = await fetch(`${API}/assets/${assetId}/transfer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Failed to transfer ownership');
   return res.json();
 }
