@@ -1,0 +1,199 @@
+{
+  "zaps": [
+    {
+      "id": "354262754",
+      "title": "Lead Alert",
+      "is_enabled": true,
+      "folder": "Sales Ops",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354262754"
+      },
+      "steps": [
+        {
+          "app": "Schedule by Zapier",
+          "event": "Every Day",
+          "role": "trigger"
+        },
+        {
+          "app": "Google Sheets",
+          "event": "Create Spreadsheet Row",
+          "role": "action"
+        },
+        {
+          "app": "Gmail",
+          "event": "Send Email",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354263126",
+      "title": "Customer Support",
+      "is_enabled": true,
+      "folder": "Customer Support",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354263126"
+      },
+      "steps": [
+        {
+          "app": "Gmail",
+          "event": "New Email Matching Search",
+          "role": "trigger"
+        },
+        {
+          "app": "Google Sheets",
+          "event": "Create Spreadsheet Row",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354263489",
+      "title": "Weekly Sales Digest",
+      "is_enabled": true,
+      "folder": "Sales Ops",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354263489"
+      },
+      "steps": [
+        {
+          "app": "Schedule by Zapier",
+          "event": "Every Week",
+          "role": "trigger"
+        },
+        {
+          "app": "Gmail",
+          "event": "Send Email",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354263593",
+      "title": "Customer Feedback Pipeline",
+      "is_enabled": false,
+      "folder": "Sales Ops",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354263593"
+      },
+      "steps": [
+        {
+          "app": "Google Sheets",
+          "event": "New Spreadsheet Row",
+          "role": "trigger"
+        },
+        {
+          "app": "Gmail",
+          "event": "Send Email",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354263738",
+      "title": "Invoice Tracker",
+      "is_enabled": true,
+      "folder": "Product",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354263738"
+      },
+      "steps": [
+        {
+          "app": "Gmail",
+          "event": "New Email Matching Search",
+          "role": "trigger"
+        },
+        {
+          "app": "Google Sheets",
+          "event": "Create Spreadsheet Row",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354268080",
+      "title": "Marketing Campaign Logger",
+      "is_enabled": true,
+      "folder": "Marketing",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354268080"
+      },
+      "steps": [
+        {
+          "app": "Schedule by Zapier",
+          "event": "Every Day",
+          "role": "trigger"
+        },
+        {
+          "app": "Google Sheets",
+          "event": "Create Spreadsheet Row",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354268144",
+      "title": "Error Monitor",
+      "is_enabled": true,
+      "folder": "Engineering",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354268144"
+      },
+      "steps": [
+        {
+          "app": "Zapier Manager",
+          "event": "Zap Turned Off",
+          "role": "trigger"
+        },
+        {
+          "app": "Gmail",
+          "event": "Send Email",
+          "role": "action"
+        }
+      ]
+    },
+    {
+      "id": "354268359",
+      "title": "New Hire Onboarding Notify",
+      "is_enabled": true,
+      "folder": "Engineering",
+      "links": {
+        "html_editor": "https://zapier.com/editor/354268359"
+      },
+      "steps": [
+        {
+          "app": "Google Sheets",
+          "event": "New Spreadsheet Row",
+          "role": "trigger"
+        },
+        {
+          "app": "Gmail",
+          "event": "Send Email",
+          "role": "action"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_gmail_001",
+      "app": "Gmail",
+      "status": "active"
+    },
+    {
+      "id": "conn_googlesheets_001",
+      "app": "Google Sheets",
+      "status": "active"
+    },
+    {
+      "id": "conn_schedule_001",
+      "app": "Schedule by Zapier",
+      "status": "active"
+    },
+    {
+      "id": "conn_zapiermanager_001",
+      "app": "Zapier Manager",
+      "status": "active"
+    }
+  ]
+}
