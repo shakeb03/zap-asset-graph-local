@@ -6,3 +6,67 @@ datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
 }
+
+enum AssetType {
+  zap
+  connection
+}
+
+enum AssetStatus {
+  active
+  paused
+  disabled
+}
+
+enum DependencyRelationshipType {
+  uses
+  triggers
+  reads_from
+  writes_to
+}
+
+model Asset {
+  id              String    @id @default(cuid())
+  name            String
+  type            AssetType
+  status          AssetStatus
+  owner           String?
+  workspace       String
+  zapierZapId     String?
+  zapierEditUrl   String?
+  triggerApp      String?
+  actionApps      String?   // JSON array of app names, e.g. ["Gmail","Google Sheets"]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  dependenciesAsDependent Dependency[] @relation("Dependent")
+  dependenciesAsDependency Dependency[] @relation("Dependency")
+  auditLogs       AuditLog[]
+}
+
+model Dependency {
+  id               String                    @id @default(cuid())
+  dependentId      String
+  dependencyId     String
+  relationshipType DependencyRelationshipType
+
+  dependent  Asset @relation("Dependent", fields: [dependentId], references: [id], onDelete: Cascade)
+  dependency Asset @relation("Dependency", fields: [dependencyId], references: [id], onDelete: Cascade)
+
+  @@unique([dependentId, dependencyId, relationshipType])
+  @@index([dependentId])
+  @@index([dependencyId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  assetId   String
+  action    String
+  actor     String
+  details   String?
+  timestamp DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+}

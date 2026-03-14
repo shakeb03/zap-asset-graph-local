@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "import": "tsx src/import.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
