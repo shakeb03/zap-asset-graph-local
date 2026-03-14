@@ -19,6 +19,7 @@ import type { BlastRadiusResponse, HealthReportResponse } from './types';
 import { layoutNodes } from './lib/layout';
 import { AssetNode, type AssetNodeData } from './components/AssetNode';
 import { AssetSidebar } from './components/AssetSidebar';
+import { AssistantDrawer } from './components/AssistantDrawer';
 import { GraphSkeleton } from './components/GraphSkeleton';
 import { HealthPanel } from './components/HealthPanel';
 import { getFriendlyErrorMessage } from './api';
@@ -226,6 +227,32 @@ export default function App() {
     }
   }, []);
 
+  const healthSummary = useMemo(() => {
+    if (!healthReport) return undefined;
+    return {
+      healthScore: healthReport.healthScore,
+      orphanedCount: healthReport.orphaned.count,
+      pausedCount: healthReport.errorOrPaused.count,
+      spofCount: healthReport.singlePointsOfFailure.count,
+    };
+  }, [healthReport]);
+
+  const handleSelectAssetFromChat = useCallback(
+    (assetId: string) => {
+      const asset = assets.find((a) => a.id === assetId);
+      if (!asset) return;
+      setMigrationSimulation(null);
+      setSelectedAsset(asset);
+      setBlastRadiusResponse(null);
+      setBlastRadiusLoading(true);
+      fetchBlastRadius(assetId)
+        .then(setBlastRadiusResponse)
+        .catch(() => setBlastRadiusResponse(null))
+        .finally(() => setBlastRadiusLoading(false));
+    },
+    [assets]
+  );
+
   const simulationBanner =
     migrationSimulation && migrationSimulation.blastRadius.impactedAssets.length > 0
       ? (() => {
@@ -367,6 +394,12 @@ export default function App() {
       {healthReport && (
         <HealthPanel report={healthReport} onClose={() => setHealthReport(null)} />
       )}
+
+      <AssistantDrawer
+        assets={assets}
+        healthSummary={healthSummary}
+        onSelectAsset={handleSelectAssetFromChat}
+      />
     </div>
   );
 }

@@ -46,6 +46,11 @@ function getActionApps(steps: ZapStep[]): string[] {
 async function main() {
   const data = loadExport();
 
+  // 0. Clear existing data so re-running import doesn't create duplicates (full replace)
+  await prisma.dependency.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.asset.deleteMany();
+
   // 1. Create connection assets first (app name -> asset id)
   const connectionAssetIdsByApp = new Map<string, string>();
   for (const conn of data.connections) {

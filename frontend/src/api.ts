@@ -47,6 +47,19 @@ export async function fetchHealthReport(): Promise<HealthReportResponse> {
   return res.json();
 }
 
+export async function askAssistant(message: string, context: unknown): Promise<{ text: string }> {
+  const res = await fetch(`${API}/assistant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, context }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error((err as { error?: string; details?: string }).details ?? (err as { error?: string }).error ?? 'Assistant unavailable');
+  }
+  return res.json();
+}
+
 export async function transferOwnership(
   assetId: string,
   body: { newOwner: string; actor: string }
