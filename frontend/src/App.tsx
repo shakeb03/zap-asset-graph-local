@@ -19,7 +19,9 @@ import type { BlastRadiusResponse, HealthReportResponse } from './types';
 import { layoutNodes } from './lib/layout';
 import { AssetNode, type AssetNodeData } from './components/AssetNode';
 import { AssetSidebar } from './components/AssetSidebar';
+import { GraphSkeleton } from './components/GraphSkeleton';
 import { HealthPanel } from './components/HealthPanel';
+import { getFriendlyErrorMessage } from './api';
 
 const nodeTypes: NodeTypes = { asset: AssetNode };
 
@@ -86,6 +88,7 @@ export default function App() {
   } | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [blastRadiusResponse, setBlastRadiusResponse] = useState<BlastRadiusResponse | null>(null);
+  const [blastRadiusLoading, setBlastRadiusLoading] = useState(false);
   const [healthReport, setHealthReport] = useState<HealthReportResponse | null>(null);
   const [connectionAssets, setConnectionAssets] = useState<Asset[]>([]);
 
@@ -119,7 +122,7 @@ export default function App() {
       });
       setAssets(res.data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load assets');
+      setError(getFriendlyErrorMessage(e, 'Failed to load assets'));
       setAssets([]);
     } finally {
       setLoading(false);
@@ -153,11 +156,14 @@ export default function App() {
       setMigrationSimulation(null);
       if (asset) setSelectedAsset(asset);
       setBlastRadiusResponse(null);
+      setBlastRadiusLoading(true);
       try {
         const res = await fetchBlastRadius(id);
         setBlastRadiusResponse(res);
       } catch {
         setBlastRadiusResponse(null);
+      } finally {
+        setBlastRadiusLoading(false);
       }
     },
     []
@@ -333,14 +339,16 @@ export default function App() {
             maskColor="rgba(10,10,15,0.8)"
             className="!bg-[#12121a] !border-[#2a2a3a]"
           />
-          {loading && (
+          {loading && assets.length === 0 && <GraphSkeleton />}
+          {loading && assets.length > 0 && (
             <Panel position="top-left" className="rounded border border-[#2a2a3a] bg-[#12121a] px-3 py-2 text-sm text-zinc-400">
-              Loading…
+              Updating…
             </Panel>
           )}
           {error && (
-            <Panel position="top-left" className="rounded border border-red-500/50 bg-red-950/20 px-3 py-2 text-sm text-red-400">
-              {error}
+            <Panel position="top-left" className="max-w-md rounded border border-red-500/50 bg-red-950/20 px-4 py-3 text-sm text-red-400">
+              <p className="font-medium">Couldn’t load assets</p>
+              <p className="mt-1 text-red-300/90">{error}</p>
             </Panel>
           )}
           </ReactFlow>
@@ -349,6 +357,7 @@ export default function App() {
           <AssetSidebar
             asset={selectedAsset}
             blastRadius={blastRadiusResponse}
+            blastRadiusLoading={blastRadiusLoading}
             onClose={closeSidebar}
             onAssetUpdated={handleAssetUpdated}
           />

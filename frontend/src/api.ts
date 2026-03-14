@@ -2,6 +2,22 @@ import type { Asset, AssetsResponse, BlastRadiusResponse, HealthReportResponse }
 
 const API = '/api';
 
+const UNREACHABLE_MESSAGE =
+  'API is unreachable. Make sure the backend is running (e.g. npm run dev:backend).';
+
+function isNetworkError(e: unknown): boolean {
+  if (e instanceof TypeError && (e.message === 'Failed to fetch' || e.message.includes('fetch')))
+    return true;
+  if (e instanceof Error && e.name === 'TypeError') return true;
+  return false;
+}
+
+export function getFriendlyErrorMessage(e: unknown, fallback = 'Something went wrong.'): string {
+  if (isNetworkError(e)) return UNREACHABLE_MESSAGE;
+  if (e instanceof Error && e.message) return e.message;
+  return fallback;
+}
+
 export async function fetchAssets(params?: {
   type?: string;
   workspace?: string;

@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { X, ExternalLink, ArrowRight } from 'lucide-react';
 import type { Asset } from '../types';
 import type { BlastRadiusResponse } from '../types';
-import { transferOwnership } from '../api';
+import { transferOwnership, getFriendlyErrorMessage } from '../api';
 
 interface AssetSidebarProps {
   asset: Asset;
   blastRadius: BlastRadiusResponse | null;
+  blastRadiusLoading?: boolean;
   onClose: () => void;
   onAssetUpdated?: (asset: Asset) => void;
 }
@@ -43,7 +44,7 @@ const severityColors: Record<string, string> = {
   high: 'bg-red-500/20 text-red-400 border border-red-500/40',
 };
 
-export function AssetSidebar({ asset, blastRadius, onClose, onAssetUpdated }: AssetSidebarProps) {
+export function AssetSidebar({ asset, blastRadius, blastRadiusLoading, onClose, onAssetUpdated }: AssetSidebarProps) {
   const [newOwner, setNewOwner] = useState('');
   const [actor, setActor] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
@@ -62,7 +63,7 @@ export function AssetSidebar({ asset, blastRadius, onClose, onAssetUpdated }: As
       setNewOwner('');
       setActor('');
     } catch (e) {
-      setTransferError(e instanceof Error ? e.message : 'Transfer failed');
+      setTransferError(getFriendlyErrorMessage(e, 'Transfer failed'));
     } finally {
       setTransferLoading(false);
     }
@@ -132,30 +133,42 @@ export function AssetSidebar({ asset, blastRadius, onClose, onAssetUpdated }: As
             </div>
           )}
 
-          {blastRadius && (
-            <div>
-              <h4 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Blast radius
-              </h4>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-zinc-300">
-                  {blastRadius.totalImpacted} impacted
-                </span>
-                <span className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${severityClass}`}>
-                  {blastRadius.severity}
-                </span>
+          <div>
+            <h4 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Blast radius
+            </h4>
+            {blastRadiusLoading ? (
+              <div className="mt-1.5 space-y-2">
+                <div className="flex gap-2">
+                  <div className="h-5 w-16 animate-pulse rounded bg-[#2a2a3a]" />
+                  <div className="h-5 w-14 animate-pulse rounded bg-[#2a2a3a]" />
+                </div>
+                <div className="h-20 animate-pulse rounded-md border border-[#2a2a3a] bg-[#0a0a0f]" />
               </div>
-              {blastRadius.impactedAssets.length > 0 && (
-                <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-[#2a2a3a] bg-[#0a0a0f] px-3 py-2 text-sm text-zinc-400">
-                  {blastRadius.impactedAssets.map((a) => (
-                    <li key={a.id} className="truncate">
-                      {a.name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+            ) : blastRadius ? (
+              <>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-zinc-300">
+                    {blastRadius.totalImpacted} impacted
+                  </span>
+                  <span className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${severityClass}`}>
+                    {blastRadius.severity}
+                  </span>
+                </div>
+                {blastRadius.impactedAssets.length > 0 && (
+                  <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-[#2a2a3a] bg-[#0a0a0f] px-3 py-2 text-sm text-zinc-400">
+                    {blastRadius.impactedAssets.map((a) => (
+                      <li key={a.id} className="truncate">
+                        {a.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-zinc-500">Click a node to see impact.</p>
+            )}
+          </div>
 
           <div>
             <h4 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
