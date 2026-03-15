@@ -1,6 +1,6 @@
 import type { Asset, AssetsResponse, BlastRadiusResponse, HealthReportResponse } from './types';
 
-const API = '/api';
+const API = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 const UNREACHABLE_MESSAGE =
   'API is unreachable. Make sure the backend is running (e.g. npm run dev:backend).';
