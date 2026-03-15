@@ -14,8 +14,8 @@ export interface Asset {
   actionApps: string | null;
   createdAt: string;
   updatedAt: string;
-  dependenciesAsDependent?: Array<{ dependentId: string; dependencyId: string; dependency: Asset }>;
-  dependenciesAsDependency?: Array<{ dependentId: string; dependencyId: string; dependent: Asset }>;
+  dependenciesAsDependent?: Array<{ dependentId: string; dependencyId: string; relationshipType?: string; dependency: Asset }>;
+  dependenciesAsDependency?: Array<{ dependentId: string; dependencyId: string; relationshipType?: string; dependent: Asset }>;
 }
 
 export interface AssetsResponse {

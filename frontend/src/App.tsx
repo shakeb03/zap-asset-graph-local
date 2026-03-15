@@ -58,17 +58,26 @@ function buildFlowData(
   for (const asset of assets) {
     const deps = asset.dependenciesAsDependent ?? [];
     for (const d of deps) {
-      const key = `${d.dependentId}-${d.dependencyId}`;
+      const key = `${d.dependencyId}-${d.dependentId}`;
       if (edgeSet.has(key)) continue;
       edgeSet.add(key);
+      const isHighlighted =
+        !!blastState?.impactedIds.has(d.dependentId) && blastState.impactedIds.has(d.dependencyId);
       edges.push({
         id: key,
-        source: d.dependentId,
-        target: d.dependencyId,
-        animated: !!blastState?.impactedIds.has(d.dependentId) && blastState.impactedIds.has(d.dependencyId),
-        style: blastState?.impactedIds.has(d.dependentId) && blastState.impactedIds.has(d.dependencyId)
-          ? { stroke: '#ef4444', strokeWidth: 2 }
-          : undefined,
+        source: d.dependencyId,
+        target: d.dependentId,
+        type: 'smoothstep',
+        animated: isHighlighted,
+        style: {
+          stroke: isHighlighted ? '#ef4444' : '#4a4a5a',
+          strokeWidth: isHighlighted ? 2 : 1.5,
+        },
+        label: d.relationshipType ?? 'uses',
+        labelStyle: { fill: '#71717a', fontSize: 10 },
+        labelBgStyle: { fill: '#12121a', fillOpacity: 0.9 },
+        labelBgPadding: [4, 2] as [number, number],
+        labelBgBorderRadius: 2,
       });
     }
   }
@@ -355,7 +364,10 @@ export default function App() {
             fitViewOptions={{ padding: 0.2 }}
             minZoom={0.2}
             maxZoom={1.5}
-            defaultEdgeOptions={{ type: 'smoothstep', style: { stroke: '#2a2a3a' } }}
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              style: { stroke: '#4a4a5a', strokeWidth: 1.5 },
+            }}
             proOptions={{ hideAttribution: true }}
             className="bg-[#0a0a0f]"
           >

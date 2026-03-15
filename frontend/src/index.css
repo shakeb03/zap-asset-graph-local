@@ -11,3 +11,11 @@ body {
   background: var(--bg);
   color: #e4e4e7;
 }
+
+/* Ensure React Flow edges are visible (override any transparent/hidden defaults) */
+.react-flow__edge-path {
+  stroke-width: inherit;
+}
+.react-flow__edge path {
+  stroke: inherit;
+}

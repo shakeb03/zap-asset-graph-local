@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Zap, Link2 } from 'lucide-react';
-import type { NodeProps, Node } from '@xyflow/react';
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
 import type { Asset } from '../types';
 
 export type AssetNodeData = {
@@ -33,12 +33,14 @@ function AssetNodeComponent({ data, selected }: NodeProps<AssetNodeType>) {
   return (
     <div
       className={`
-        min-w-[200px] max-w-[240px] rounded-lg border-2 bg-[#12121a] px-3 py-2.5
+        relative min-w-[200px] max-w-[240px] rounded-lg border-2 bg-[#12121a] px-3 py-2.5
         transition-all duration-200
         ${border} ${opacity}
         ${selected ? 'ring-2 ring-[#ff6b35]/50' : ''}
       `}
     >
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !border-2 !border-[#4a4a5a] !bg-[#12121a]" />
+      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !border-2 !border-[#4a4a5a] !bg-[#12121a]" />
       <div className="flex items-start gap-2">
         <span className="mt-0.5 shrink-0 text-[#ff6b35]">
           {asset.type === 'zap' ? <Zap size={18} strokeWidth={2} /> : <Link2 size={18} strokeWidth={2} />}
