@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, type ReactNode } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { MessageCircle, X, Send } from 'lucide-react';
 import { askAssistant } from '../api';
 import type { Asset } from '../types';
@@ -18,12 +19,12 @@ function segmentTextWithAssets(
   text: string,
   assets: Array<{ id: string; name: string }>,
   onSelect: (id: string) => void
-): React.ReactNode[] {
-  if (assets.length === 0) return [text];
+): ReactNode {
+  if (assets.length === 0) return text;
   const byName = assets
     .filter((a) => a.name.length > 0)
     .sort((a, b) => b.name.length - a.name.length);
-  const parts: React.ReactNode[] = [];
+  const parts: ReactNode[] = [];
   let remaining = text;
   while (remaining.length > 0) {
     let best: { name: string; id: string; index: number } | null = null;
@@ -49,7 +50,25 @@ function segmentTextWithAssets(
     );
     remaining = remaining.slice(best.index + best.name.length);
   }
-  return parts;
+  return <>{parts}</>;
+}
+
+function processChildrenWithAssets(
+  children: ReactNode,
+  assetList: Array<{ id: string; name: string }>,
+  onSelect: (id: string) => void
+): ReactNode {
+  if (children == null) return null;
+  if (typeof children === 'string') return segmentTextWithAssets(children, assetList, onSelect);
+  if (Array.isArray(children))
+    return children.map((child, i) => (
+      <span key={i}>{processChildrenWithAssets(child, assetList, onSelect)}</span>
+    ));
+  if (children && typeof children === 'object' && 'props' in children && (children as React.ReactElement).props?.children != null) {
+    const el = children as React.ReactElement;
+    return React.cloneElement(el, {}, processChildrenWithAssets(el.props.children, assetList, onSelect));
+  }
+  return children;
 }
 
 export function AssistantDrawer({
@@ -108,6 +127,50 @@ export function AssistantDrawer({
 
   const assetList = assets.map((a) => ({ id: a.id, name: a.name }));
 
+  const markdownComponents = {
+    p: ({ children }: { children?: ReactNode }) => (
+      <p className="mb-2 last:mb-0 text-zinc-300 leading-relaxed">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </p>
+    ),
+    strong: ({ children }: { children?: ReactNode }) => (
+      <strong className="font-semibold text-white">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </strong>
+    ),
+    ul: ({ children }: { children?: ReactNode }) => (
+      <ul className="mb-2 list-disc pl-5 space-y-0.5 text-zinc-300">{children}</ul>
+    ),
+    ol: ({ children }: { children?: ReactNode }) => (
+      <ol className="mb-2 list-decimal pl-5 space-y-0.5 text-zinc-300">{children}</ol>
+    ),
+    li: ({ children }: { children?: ReactNode }) => (
+      <li className="leading-snug">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </li>
+    ),
+    h3: ({ children }: { children?: ReactNode }) => (
+      <h3 className="mt-3 mb-1 text-sm font-semibold text-white first:mt-0">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </h3>
+    ),
+    h4: ({ children }: { children?: ReactNode }) => (
+      <h4 className="mt-2 mb-0.5 text-xs font-semibold text-zinc-200 uppercase tracking-wide">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </h4>
+    ),
+    h1: ({ children }: { children?: ReactNode }) => (
+      <h1 className="mt-0 mb-2 text-base font-semibold text-white">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </h1>
+    ),
+    h2: ({ children }: { children?: ReactNode }) => (
+      <h2 className="mt-3 mb-1.5 text-sm font-semibold text-white first:mt-0">
+        {processChildrenWithAssets(children, assetList, onSelectAsset)}
+      </h2>
+    ),
+  };
+
   return (
     <>
       <button
@@ -157,11 +220,13 @@ export function AssistantDrawer({
                     }
                   >
                     {m.role === 'assistant' ? (
-                      <span className="whitespace-pre-wrap">
-                        {segmentTextWithAssets(m.content, assetList, onSelectAsset)}
-                      </span>
+                      <div className="assistant-message text-sm">
+                        <ReactMarkdown components={markdownComponents}>
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
                     ) : (
-                      m.content
+                      <span className="whitespace-pre-wrap text-zinc-200">{m.content}</span>
                     )}
                   </div>
                 ))}
