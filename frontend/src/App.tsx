@@ -262,6 +262,24 @@ export default function App() {
     [assets]
   );
 
+  const handleSelectAssetFromSidebar = useCallback(
+    (assetId: string) => {
+      const asset =
+        assets.find((a) => a.id === assetId) ??
+        blastRadiusResponse?.impactedAssets.find((a) => a.id === assetId);
+      if (!asset) return;
+      setMigrationSimulation(null);
+      setSelectedAsset(asset);
+      setBlastRadiusResponse(null);
+      setBlastRadiusLoading(true);
+      fetchBlastRadius(assetId)
+        .then(setBlastRadiusResponse)
+        .catch(() => setBlastRadiusResponse(null))
+        .finally(() => setBlastRadiusLoading(false));
+    },
+    [assets, blastRadiusResponse]
+  );
+
   const simulationBanner =
     migrationSimulation && migrationSimulation.blastRadius.impactedAssets.length > 0
       ? (() => {
@@ -399,6 +417,7 @@ export default function App() {
             blastRadiusLoading={blastRadiusLoading}
             onClose={closeSidebar}
             onAssetUpdated={handleAssetUpdated}
+            onSelectAsset={handleSelectAssetFromSidebar}
           />
         )}
       </main>

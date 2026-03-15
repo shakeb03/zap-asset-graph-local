@@ -10,6 +10,101 @@ interface AssetSidebarProps {
   blastRadiusLoading?: boolean;
   onClose: () => void;
   onAssetUpdated?: (asset: Asset) => void;
+  onSelectAsset?: (id: string) => void;
+}
+
+const SEVERITY_RING: Record<string, { ring: string; glow: string }> = {
+  none: { ring: 'ring-2 ring-emerald-500/60', glow: 'shadow-[0_0_8px_rgba(16,185,129,0.4)]' },
+  low: { ring: 'ring-2 ring-blue-500/60', glow: 'shadow-[0_0_8px_rgba(59,130,246,0.4)]' },
+  medium: { ring: 'ring-2 ring-amber-500/60', glow: 'shadow-[0_0_8px_rgba(245,158,11,0.4)]' },
+  high: { ring: 'ring-2 ring-red-500/60', glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]' },
+};
+
+function BlastRadiusDiagram({
+  rootAsset,
+  impactedAssets,
+  onSelectAsset,
+}: {
+  rootAsset: Asset;
+  impactedAssets: Asset[];
+  severity: BlastRadiusResponse['severity'];
+  onSelectAsset?: (id: string) => void;
+}) {
+  const rows = Math.max(1, Math.ceil(impactedAssets.length / 2));
+  const diagramHeight = 40 + rows * 40;
+  const viewBoxHeight = 40 + rows * 40;
+
+  return (
+    <div className="mt-2">
+      {/* Center node (selected asset) at top */}
+      <div className="flex justify-center">
+        <div
+          className={`
+            inline-flex max-w-full items-center rounded-full px-3 py-1.5 text-xs font-medium
+            ${rootAsset.type === 'zap' ? 'bg-[#ff6b35]/20 text-[#ff6b35] border border-[#ff6b35]/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'}
+          `}
+          title={rootAsset.name}
+        >
+          <span className="truncate">{rootAsset.name}</span>
+        </div>
+      </div>
+
+      {/* Lines fanning out + impacted pills */}
+      <div
+        className="relative w-full"
+        style={{ height: diagramHeight }}
+      >
+        <svg
+          className="absolute inset-0 h-full w-full"
+          viewBox={`0 0 100 ${viewBoxHeight}`}
+          preserveAspectRatio="none"
+          style={{ overflow: 'visible' }}
+        >
+          {impactedAssets.map((_, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const x = 25 + 50 * col;
+            const y = 40 + 40 * row;
+            const delayClass = `blast-line-delay-${Math.min(i + 1, 8)}`;
+            return (
+              <line
+                key={i}
+                x1={50}
+                y1={0}
+                x2={x}
+                y2={y}
+                className={`blast-line ${delayClass}`}
+              />
+            );
+          })}
+        </svg>
+
+        <div
+          className="absolute inset-0 grid pt-10"
+          style={{
+            gridTemplateColumns: '1fr 1fr',
+            gridTemplateRows: `repeat(${rows}, 40px)`,
+          }}
+        >
+          {impactedAssets.map((a) => (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => onSelectAsset?.(a.id)}
+              className={`
+                flex items-center justify-center rounded-full px-2 py-1 text-[10px] font-medium
+                truncate transition-opacity hover:opacity-90
+                ${a.type === 'zap' ? 'bg-[#ff6b35]/25 text-[#ff6b35] border border-[#ff6b35]/50' : 'bg-emerald-500/25 text-emerald-400 border border-emerald-500/50'}
+              `}
+              title={a.name}
+            >
+              <span className="truncate">{a.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function parseActionApps(actionApps: string | null): string[] {
@@ -37,14 +132,7 @@ function ZapFlow({ triggerApp, actionApps }: { triggerApp: string | null; action
   );
 }
 
-const severityColors: Record<string, string> = {
-  none: 'bg-zinc-600 text-zinc-300',
-  low: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
-  medium: 'bg-orange-500/20 text-orange-400 border border-orange-500/40',
-  high: 'bg-red-500/20 text-red-400 border border-red-500/40',
-};
-
-export function AssetSidebar({ asset, blastRadius, blastRadiusLoading, onClose, onAssetUpdated }: AssetSidebarProps) {
+export function AssetSidebar({ asset, blastRadius, blastRadiusLoading, onClose, onAssetUpdated, onSelectAsset }: AssetSidebarProps) {
   const [newOwner, setNewOwner] = useState('');
   const [actor, setActor] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
@@ -71,7 +159,8 @@ export function AssetSidebar({ asset, blastRadius, blastRadiusLoading, onClose, 
 
   const dependencies = asset.dependenciesAsDependent ?? [];
   const severity = blastRadius?.severity ?? 'none';
-  const severityClass = severityColors[severity] ?? severityColors.none;
+  const severityRing = SEVERITY_RING[severity] ?? SEVERITY_RING.none;
+  const isHighSeverity = severity === 'high';
 
   return (
     <aside className="flex h-full w-[360px] shrink-0 flex-col border-l border-[#2a2a3a] bg-[#12121a]">
@@ -148,21 +237,29 @@ export function AssetSidebar({ asset, blastRadius, blastRadiusLoading, onClose, 
             ) : blastRadius ? (
               <>
                 <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-zinc-300">
-                    {blastRadius.totalImpacted} impacted
+                  <span
+                    className={`
+                      inline-flex h-8 min-w-[2rem] items-center justify-center rounded-full px-2.5 text-sm font-semibold text-zinc-200
+                      ${severityRing.ring} ${severityRing.glow}
+                      ${isHighSeverity ? 'severity-count-pulse' : ''}
+                    `}
+                    title={`Severity: ${severity}`}
+                  >
+                    {blastRadius.totalImpacted}
                   </span>
-                  <span className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${severityClass}`}>
-                    {blastRadius.severity}
+                  <span className="text-xs text-zinc-500">
+                    impacted · <span className="capitalize text-zinc-400">{severity}</span>
                   </span>
                 </div>
-                {blastRadius.impactedAssets.length > 0 && (
-                  <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto rounded-md border border-[#2a2a3a] bg-[#0a0a0f] px-3 py-2 text-sm text-zinc-400">
-                    {blastRadius.impactedAssets.map((a) => (
-                      <li key={a.id} className="truncate">
-                        {a.name}
-                      </li>
-                    ))}
-                  </ul>
+                {blastRadius.impactedAssets.length > 0 ? (
+                  <BlastRadiusDiagram
+                    rootAsset={asset}
+                    impactedAssets={blastRadius.impactedAssets}
+                    severity={blastRadius.severity}
+                    onSelectAsset={onSelectAsset}
+                  />
+                ) : (
+                  <p className="mt-2 text-xs text-zinc-500">No downstream assets.</p>
                 )}
               </>
             ) : (

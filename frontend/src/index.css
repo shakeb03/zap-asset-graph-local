@@ -19,3 +19,48 @@ body {
 .react-flow__edge path {
   stroke: inherit;
 }
+
+/* Blast radius mini diagram: line draw animation (top to bottom) */
+@keyframes blast-line-draw {
+  from {
+    stroke-dashoffset: 500;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Severity count pulse when high */
+@keyframes severity-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+.blast-line {
+  fill: none;
+  stroke: #4a4a5a;
+  stroke-width: 1.5;
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: blast-line-draw 0.5s ease-out forwards;
+}
+
+.blast-line-delay-1 { animation-delay: 0.05s; }
+.blast-line-delay-2 { animation-delay: 0.1s; }
+.blast-line-delay-3 { animation-delay: 0.15s; }
+.blast-line-delay-4 { animation-delay: 0.2s; }
+.blast-line-delay-5 { animation-delay: 0.25s; }
+.blast-line-delay-6 { animation-delay: 0.3s; }
+.blast-line-delay-7 { animation-delay: 0.35s; }
+.blast-line-delay-8 { animation-delay: 0.4s; }
+
+.severity-count-pulse {
+  animation: severity-pulse 1.5s ease-in-out infinite;
+}
